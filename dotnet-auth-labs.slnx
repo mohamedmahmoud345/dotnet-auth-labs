@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/JwtFromScratch/JwtFromScratch.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/jwtfromscratch.tests/jwtfromscratch.tests.csproj" />
+  </Folder>
 </Solution>
