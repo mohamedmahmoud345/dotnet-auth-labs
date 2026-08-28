@@ -3,6 +3,6 @@
     <Project Path="src/JwtFromScratch/JwtFromScratch.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/jwtfromscratch.tests/jwtfromscratch.tests.csproj" />
+    <Project Path="tests/JwtFromScratch.Tests/JwtFromScratch.Tests.csproj" />
   </Folder>
 </Solution>
