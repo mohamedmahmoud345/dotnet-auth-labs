@@ -4,16 +4,8 @@ run-name: CI triggered by @${{ github.actor }}
 on: 
     push: 
         branches: ["main"]
-        paths:
-            - 'src/**'
-            - 'Tests/**'
-            - 'dotnet-auth-labs.slnx'
     pull_request: 
         branches: ["main"]
-        paths:
-            - 'src/**'
-            - 'Tests/**'
-            - 'dotnet-auth-labs.slnx'
     workflow_dispatch: 
 
 jobs:
