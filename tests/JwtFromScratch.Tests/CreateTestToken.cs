@@ -13,4 +13,21 @@ public static class CreateTestToken
 
         return $"{signingInput}.{Base64Url.Encode(signature)}";
     }
+    public static string CreateTokenWithClaims(byte[] secret)
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        return CreateTestToken.Create(
+            "{\"alg\":\"HS256\"}",
+            $$"""
+        {
+            "sub": "alice",
+            "iss": "my-app",
+            "aud": "my-api",
+            "exp": {{now + 3600}},
+            "nbf": {{now}},
+            "iat": {{now}}
+        }
+        """,
+            secret);
+    }
 }

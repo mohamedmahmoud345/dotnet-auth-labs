@@ -113,9 +113,18 @@ public class JwtFromScratchUnitTests
 
         var jwtToken = JwtToken.Parse(encodedHeader);
 
-        Assert.Throws<KeyNotFoundException>(() => jwtToken.GetAlgorithm());
+        Assert.Throws<FormatException>(() => jwtToken.GetAlgorithm());
     }
-
+    
+    [Fact]
+    public void GetAlgorithm_InvalidJson_Throws()
+    {
+        // "not json" base64url-encoded
+        string invalidJsonHeader = Base64Url.Encode(Encoding.UTF8.GetBytes("not json"));
+        string token = $"{invalidJsonHeader}.bbb.ccc";
+        var jwt = JwtToken.Parse(token);
+        Assert.Throws<FormatException>(() => jwt.GetAlgorithm());
+    }
     [Fact]
     public void ValidateSignature_ValidToken_Accepted()
     {
@@ -176,5 +185,93 @@ public class JwtFromScratchUnitTests
 
         var jwt = JwtToken.Parse(tamperedToken);
         Assert.Throws<InvalidOperationException>(() => jwt.ValidateSignature(secret));
+    }
+
+    [Fact]
+    public void ValidateClaims_ValidToken_ReturnsClaims()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        string token = CreateTestToken.CreateTokenWithClaims(secret);
+
+        var jwt = JwtToken.Parse(token);
+        jwt.ValidateSignature(secret);
+        var claims = jwt.ValidateClaims("my-app", "my-api");
+
+        Assert.Equal("alice", claims.Sub);
+        Assert.Equal("my-app", claims.Iss);
+        Assert.Equal("my-api", claims.Aud);
+        Assert.NotNull(claims.Exp);
+        Assert.NotNull(claims.Nbf);
+        Assert.NotNull(claims.Iat);
+    }
+
+    [Fact]
+    public void ValidateClaims_ExpiredToken_Throws()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        var past = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeSeconds();
+        string token = CreateTestToken.Create(
+            "{\"alg\":\"HS256\"}",
+            $$"""
+        {
+            "sub": "alice",
+            "iss": "my-app",
+            "aud": "my-api",
+            "exp": {{past}},
+            "nbf": {{past}},
+            "iat": {{past}}
+        }
+        """,
+            secret);
+
+        var jwt = JwtToken.Parse(token);
+        jwt.ValidateSignature(secret);
+        Assert.Throws<InvalidOperationException>(() => jwt.ValidateClaims("my-app", "my-api"));
+    }
+
+    [Fact]
+    public void ValidateClaims_FutureNbf_Throws()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        var future = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds();
+        string token = CreateTestToken.Create(
+            "{\"alg\":\"HS256\"}",
+            $$"""
+        {
+            "sub": "alice",
+            "iss": "my-app",
+            "aud": "my-api",
+            "exp": {{future + 3600}},
+            "nbf": {{future}},
+            "iat": {{future}}
+        }
+        """,
+            secret);
+
+        var jwt = JwtToken.Parse(token);
+        jwt.ValidateSignature(secret);
+        Assert.Throws<InvalidOperationException>(() => jwt.ValidateClaims("my-app", "my-api"));
+    }
+
+    [Fact]
+    public void ValidateClaims_WrongIssuer_Throws()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        string token = CreateTestToken.CreateTokenWithClaims(secret);
+
+        var jwt = JwtToken.Parse(token);
+        jwt.ValidateSignature(secret);
+        Assert.Throws<InvalidOperationException>(() => jwt.ValidateClaims("wrong-app", "my-api"));
+    }
+
+    [Fact]
+    public void ValidateClaims_WrongAudience_Throws()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        string token = CreateTestToken.CreateTokenWithClaims(secret);
+
+        var jwt = JwtToken.Parse(token);
+        jwt.ValidateSignature(secret);
+        Assert.Throws<InvalidOperationException>(() => jwt.ValidateClaims("my-app", "wrong-api"));
     }
 }
