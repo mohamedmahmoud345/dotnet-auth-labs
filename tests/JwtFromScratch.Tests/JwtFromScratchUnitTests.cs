@@ -54,7 +54,7 @@ public class JwtFromScratchUnitTests
         
         var token = "aaa.bbb.ccc";
 
-        var res = JwtToken.Split(token);
+        var res = JwtToken.SplitToken(token);
         
         Assert.Equal(("aaa", "bbb", "ccc"), res);
     }
@@ -65,7 +65,7 @@ public class JwtFromScratchUnitTests
         var token2 = "aaa.bbb.ccc.ddd";
         
 
-        Assert.Throws<FormatException>(() => JwtToken.Split(token1));
-        Assert.Throws<FormatException>(() => JwtToken.Split(token2));
+        Assert.Throws<FormatException>(() => JwtToken.SplitToken(token1));
+        Assert.Throws<FormatException>(() => JwtToken.SplitToken(token2));
     }
 }

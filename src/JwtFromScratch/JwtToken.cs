@@ -3,7 +3,7 @@ namespace JwtFromScratch;
 
 public static class JwtToken
 {
-    public static (string, string, string) Split(string input)
+    public static (string, string, string) SplitToken(string input)
     {
         var sp = input.Split('.');
         if (!(sp.Length == 3))
