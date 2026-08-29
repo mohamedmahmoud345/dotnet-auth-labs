@@ -32,7 +32,7 @@ public class JwtFromScratchUnitTests
 
         Assert.Equal(original, result);
     }
-    
+
     [Fact]
     public void Encode_HandlesCharsRequiringUrlSafeReplacement()
     {
@@ -45,5 +45,27 @@ public class JwtFromScratchUnitTests
 
         byte[] decoded = Base64Url.Decode(encoded);
         Assert.Equal(data, decoded);
+    }
+
+    // jwt token part
+    [Fact]
+    public void Split_ValidToken_ReturnsThreeParts()
+    {
+        
+        var token = "aaa.bbb.ccc";
+
+        var res = JwtToken.Split(token);
+        
+        Assert.Equal(("aaa", "bbb", "ccc"), res);
+    }
+    [Fact]
+    public void Split_InvalidToken_ThrowsFormatException()
+    {
+        var token1 = "aaa.bbb";
+        var token2 = "aaa.bbb.ccc.ddd";
+        
+
+        Assert.Throws<FormatException>(() => JwtToken.Split(token1));
+        Assert.Throws<FormatException>(() => JwtToken.Split(token2));
     }
 }
