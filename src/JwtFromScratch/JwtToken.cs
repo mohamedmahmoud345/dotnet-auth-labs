@@ -1,4 +1,5 @@
 
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -24,17 +25,42 @@ public class JwtToken
 
         return new JwtToken(parts[0], parts[1], parts[2]);
     }
-    
+
     public string GetAlgorithm()
     {
         var decodeHeader = Base64Url.Decode(HeaderSegment);
         var json = Encoding.UTF8.GetString(decodeHeader);
         using var doc = JsonDocument.Parse(json);
         var alg = doc.RootElement.GetProperty("alg").GetString();
-        
+
         if (alg != "HS256")
             throw new FormatException();
 
         return alg!;
+    }
+
+    public void ValidateSignature(byte[] secret)
+    {
+        var signingInput = HeaderSegment + "." + PayloadSegment;
+        var actualSig = Base64Url.Decode(SignatureSegment);
+
+        byte[] expectedSignature = HMACSHA256.HashData(Encoding.UTF8.GetBytes(signingInput), secret);
+        
+        if (!FixedTimeEquals(expectedSignature, actualSig))
+            throw new InvalidOperationException();
+    }
+    
+    private bool FixedTimeEquals(byte[] left, byte[] right)
+    {
+        if (left.Length != right.Length)
+            return false;
+
+        int result = 0;
+        for (var i = 0; i < left.Length; i++)
+        {
+            result |= left[i] ^ right[i];
+        }
+
+        return result == 0;
     }
 }

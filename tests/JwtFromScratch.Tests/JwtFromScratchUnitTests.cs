@@ -1,4 +1,6 @@
-﻿namespace JwtFromScratch.Tests;
+﻿using System.Text;
+
+namespace JwtFromScratch.Tests;
 
 public class JwtFromScratchUnitTests
 {
@@ -53,7 +55,7 @@ public class JwtFromScratchUnitTests
     {
 
         var token = "aaa.bbb.ccc";
-        
+
         var res = JwtToken.Parse(token);
 
         Assert.Equal(res.HeaderSegment, "aaa");
@@ -112,5 +114,67 @@ public class JwtFromScratchUnitTests
         var jwtToken = JwtToken.Parse(encodedHeader);
 
         Assert.Throws<KeyNotFoundException>(() => jwtToken.GetAlgorithm());
+    }
+
+    [Fact]
+    public void ValidateSignature_ValidToken_Accepted()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        var token = CreateTestToken.Create("{\"alg\":\"HS256\"}",
+            "{\"sub\":\"alice\"}",
+            secret);
+
+        var jwtToken = JwtToken.Parse(token);
+        jwtToken.ValidateSignature(secret);
+    }
+
+    [Fact]
+    public void ValidateSignature_WrongSecret_Throws()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        byte[] wrongSecret = "wrong-secret"u8.ToArray();
+        string token = CreateTestToken.Create(
+            "{\"alg\":\"HS256\"}",
+            "{\"sub\":\"alice\"}",
+            secret);
+
+        var jwt = JwtToken.Parse(token);
+        Assert.Throws<InvalidOperationException>(() => jwt.ValidateSignature(wrongSecret));
+    }
+
+    [Fact]
+    public void ValidateSignature_TamperedPayload_Throws()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        string token = CreateTestToken.Create(
+            "{\"alg\":\"HS256\"}",
+            "{\"sub\":\"alice\"}",
+            secret);
+
+        // Change the payload segment
+        string[] parts = token.Split('.');
+        string tamperedPayload = Base64Url.Encode(Encoding.UTF8.GetBytes("{\"sub\":\"bob\"}"));
+        string tamperedToken = $"{parts[0]}.{tamperedPayload}.{parts[2]}";
+
+        var jwt = JwtToken.Parse(tamperedToken);
+        Assert.Throws<InvalidOperationException>(() => jwt.ValidateSignature(secret));
+    }
+
+    [Fact]
+    public void ValidateSignature_TamperedHeader_Throws()
+    {
+        byte[] secret = "my-secret"u8.ToArray();
+        string token = CreateTestToken.Create(
+            "{\"alg\":\"HS256\"}",
+            "{\"sub\":\"alice\"}",
+            secret);
+
+        // Change the header segment
+        string[] parts = token.Split('.');
+        string tamperedHeader = Base64Url.Encode(Encoding.UTF8.GetBytes("{\"alg\":\"HS384\"}"));
+        string tamperedToken = $"{tamperedHeader}.{parts[1]}.{parts[2]}";
+
+        var jwt = JwtToken.Parse(tamperedToken);
+        Assert.Throws<InvalidOperationException>(() => jwt.ValidateSignature(secret));
     }
 }
