@@ -65,9 +65,52 @@ public class JwtFromScratchUnitTests
     {
         var token1 = "aaa.bbb";
         var token2 = "aaa.bbb.ccc.ddd";
-        
+
 
         Assert.Throws<FormatException>(() => JwtToken.Parse(token1));
         Assert.Throws<FormatException>(() => JwtToken.Parse(token2));
+    }
+
+    // three cases {invalid, null, none}
+
+    [Fact]
+    public void GetAlgorithm_ValidSegment_ReturnAlgorithm()
+    {
+        var encodedHeader = "eyJhbGciOiJIUzI1NiJ9.bbb.ccc";
+
+        var jwtToken = JwtToken.Parse(encodedHeader);
+        var algo = jwtToken.GetAlgorithm();
+
+        Assert.Equal("HS256", algo);
+    }
+
+    [Fact]
+    public void GetAlgorithm_InvalidAlgorithm_ThrowsFormatException()
+    {
+        var encodedHeader = "eyJhbGciOiJIMjU2In0.bbb.ccc";
+
+        var jwtToken = JwtToken.Parse(encodedHeader);
+
+        Assert.Throws<FormatException>(() => jwtToken.GetAlgorithm());
+    }
+
+    [Fact]
+    public void GetAlgorithm_WithNone_ThrowsFormatException()
+    {
+        var encodedHeader = "eyJhbGciOiJub25lIn0.bbb.ccc";
+
+        var jwtToken = JwtToken.Parse(encodedHeader);
+
+        Assert.Throws<FormatException>(() => jwtToken.GetAlgorithm());
+    }
+
+    [Fact]
+    public void GetAlgorithm_WithMissingAlgorithm_ThrowsKeyNotFoundException()
+    {
+        var encodedHeader = "e30=.bbb.ccc";
+
+        var jwtToken = JwtToken.Parse(encodedHeader);
+
+        Assert.Throws<KeyNotFoundException>(() => jwtToken.GetAlgorithm());
     }
 }

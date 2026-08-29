@@ -24,4 +24,17 @@ public class JwtToken
 
         return new JwtToken(parts[0], parts[1], parts[2]);
     }
+    
+    public string GetAlgorithm()
+    {
+        var decodeHeader = Base64Url.Decode(HeaderSegment);
+        var json = Encoding.UTF8.GetString(decodeHeader);
+        using var doc = JsonDocument.Parse(json);
+        var alg = doc.RootElement.GetProperty("alg").GetString();
+        
+        if (alg != "HS256")
+            throw new FormatException();
+
+        return alg!;
+    }
 }
