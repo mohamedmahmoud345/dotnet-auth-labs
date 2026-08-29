@@ -51,12 +51,14 @@ public class JwtFromScratchUnitTests
     [Fact]
     public void Split_ValidToken_ReturnsThreeParts()
     {
-        
-        var token = "aaa.bbb.ccc";
 
-        var res = JwtToken.SplitToken(token);
+        var token = "aaa.bbb.ccc";
         
-        Assert.Equal(("aaa", "bbb", "ccc"), res);
+        var res = JwtToken.Parse(token);
+
+        Assert.Equal(res.HeaderSegment, "aaa");
+        Assert.Equal(res.PayloadSegment, "bbb");
+        Assert.Equal(res.SignatureSegment, "ccc");
     }
     [Fact]
     public void Split_InvalidToken_ThrowsFormatException()
@@ -65,7 +67,7 @@ public class JwtFromScratchUnitTests
         var token2 = "aaa.bbb.ccc.ddd";
         
 
-        Assert.Throws<FormatException>(() => JwtToken.SplitToken(token1));
-        Assert.Throws<FormatException>(() => JwtToken.SplitToken(token2));
+        Assert.Throws<FormatException>(() => JwtToken.Parse(token1));
+        Assert.Throws<FormatException>(() => JwtToken.Parse(token2));
     }
 }
